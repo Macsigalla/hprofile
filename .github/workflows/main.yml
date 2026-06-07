@@ -9,6 +9,6 @@ jobs:
 
       - name: Maven test
         run: mvn test
-        
+
       - name: Checkstyle
-        run: mvn checkstyle
+        run: mvn checkstyle:checkstyle
