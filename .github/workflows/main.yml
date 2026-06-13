@@ -7,28 +7,42 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  Testing:
+  build:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout source code
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # Setup Java 11 for building the application
       - name: Set up Java 11
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '11'
+          cache: maven
 
-      - name: Run Tests
+      # Build and run tests
+      - name: Maven Test
         run: mvn clean test
 
+      # Run Checkstyle
       - name: Checkstyle
         run: mvn checkstyle:checkstyle
 
-      - name: SonarCloud Analysis
+      # Switch to Java 17 for SonarCloud
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # SonarCloud Analysis
+      - name: SonarCloud Scan
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
@@ -37,3 +51,12 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }} \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.token=${SONAR_TOKEN}
+
+      # Upload generated WAR/JAR as an artifact (optional)
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-artifact
+          path: |
+            target/*.jar
+            target/*.war
